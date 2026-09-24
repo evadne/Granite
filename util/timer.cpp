@@ -138,6 +138,21 @@ void sleep_until_nsecs(int64_t timepoint)
 		_mm_pause();
 #endif
 	}
+#elif defined(__APPLE__)
+	// Darwin has no clock_nanosleep. Sleep the remaining interval against the same
+	// CLOCK_MONOTONIC timebase as get_current_time_nsecs(), re-measuring after an
+	// interruption so the deadline stays absolute.
+	for (;;)
+	{
+		int64_t remaining = timepoint - get_current_time_nsecs();
+		if (remaining <= 0)
+			return;
+		struct timespec ts = {};
+		ts.tv_sec = remaining / 1000000000ll;
+		ts.tv_nsec = remaining % 1000000000ll;
+		if (nanosleep(&ts, nullptr) == 0 || errno != EINTR)
+			return;
+	}
 #else
 	constexpr auto timebase = CLOCK_MONOTONIC;
 	struct timespec ts = {};
