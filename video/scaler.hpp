@@ -42,8 +42,17 @@ public:
 
 		VkColorSpaceKHR input_color_space;
 		VkColorSpaceKHR output_color_space;
+
+		const VkRect2D *crop_rect;
+
+		bool skip_dither;
+		bool force_linear_filtering;
 	};
 
+	void set_ycbcr_chroma_midpoint(float midpoint);
+	// Narrow range follows H.273 at the given bit depth (8 to 16), expressed as normalized UNORM values.
+	// Full range (the default) ignores bit_depth.
+	void set_ycbcr_range(VkSamplerYcbcrRange range, unsigned bit_depth);
 	void rescale(Vulkan::CommandBuffer &cmd, const RescaleInfo &info);
 
 private:
@@ -51,6 +60,9 @@ private:
 	Vulkan::BufferHandle weights;
 	uint32_t last_input_width = 0, last_input_height = 0;
 	uint32_t last_output_width = 0, last_output_height = 0;
+	float ycbcr_chroma_midpoint = 0.5f;
+	VkSamplerYcbcrRange ycbcr_range = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+	unsigned ycbcr_range_bit_depth = 8;
 
 	void update_weights(Vulkan::CommandBuffer &cmd, const RescaleInfo &info);
 };
